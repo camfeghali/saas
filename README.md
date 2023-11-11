@@ -27,6 +27,7 @@ Open [http://localhost:3001](http://localhost:3001) with your browser to see the
 
 Define DB schemas in `/prisma/schema.prisma`
 Push changes to planetscale with `npx prisma db push`
+See database contents with `npx prisma studio`
 
 ## Frameworks & Tools
 
