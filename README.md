@@ -16,7 +16,7 @@ npx prisma generate
 yarn && yarn dev
 ```
 
-Open [http://localhost:3001](http://localhost:3001) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
 ## Dependencies
 
@@ -36,6 +36,7 @@ See database contents with `npx prisma studio`
 - [Prisma](https://www.prisma.io/docs) - ORM
 - [PlanetScale](https://planetscale.com/) - Database hosting
 - [Kinde](https://kinde.com/docs/developer-tools/nextjs-sdk/) - Auth provider
+- [uploadthing](https://uploadthing.com/dashboard) - Blog storage
 
 ## References:
 

@@ -6,10 +6,29 @@ import { Dialog, DialogContent, DialogTrigger } from './ui/dialog';
 import { useState } from 'react';
 import Dropzone from 'react-dropzone';
 import { Progress } from './ui/progress';
+import { useUploadThing } from '@/lib/uploadthing';
+import { Toaster } from './ui/toaster';
+import { useToast } from './ui/use-toast';
+import { UploadFileResponse } from 'uploadthing/client';
+import { trpc } from '@/app/_trpc/client';
+import { useRouter } from 'next/navigation';
 
 const UploadDropzone = () => {
-  const [isUploading, setIsUploading] = useState(true);
+  const router = useRouter();
+  const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+
+  const { toast } = useToast();
+
+  const { startUpload } = useUploadThing('pdfUploader');
+
+  const { mutate: startPolling } = trpc.getFile.useMutation({
+    onSuccess: (file) => {
+      router.push(`/dashboard/${file.id}`);
+    },
+    retry: true,
+    retryDelay: 500,
+  });
 
   const startSimulatedProgress = () => {
     setUploadProgress(0);
@@ -19,9 +38,8 @@ const UploadDropzone = () => {
         if (prevProgress >= 95) {
           clearInterval(interval);
           return prevProgress;
-        } else {
-          return prevProgress + 5;
         }
+        return prevProgress + 5;
       });
     }, 500);
     return interval;
@@ -30,14 +48,35 @@ const UploadDropzone = () => {
   return (
     <Dropzone
       multiple={false}
-      onDrop={(acceptedFiles) => {
+      onDrop={async (acceptedFiles) => {
+        console.log('dropped');
         setIsUploading(true);
         const progressInterval = startSimulatedProgress();
 
-        // uploading file logic
+        const res = await startUpload(acceptedFiles);
+
+        if (!res) {
+          return toast({
+            title: 'Something went wrong',
+            description: 'Please try again later',
+            variant: 'destructive',
+          });
+        }
+
+        console.log({ res });
+        const [fileResponse] = res as UploadFileResponse[];
+        const key = fileResponse.key;
+        if (!key) {
+          return toast({
+            title: 'Something went wrong',
+            description: 'Please try again later',
+            variant: 'destructive',
+          });
+        }
 
         clearInterval(progressInterval);
         setUploadProgress(100);
+        startPolling({ key });
       }}
     >
       {({ getRootProps, getInputProps, acceptedFiles }) => (
@@ -72,11 +111,26 @@ const UploadDropzone = () => {
               {isUploading ? (
                 <div className='w-full mt-4 max-w-xs mx-auto'>
                   <Progress
+                    indicatorColor={
+                      uploadProgress === 100 ? 'bg-green-500' : ''
+                    }
                     value={uploadProgress}
                     className='h-1 w-full bg-zinc-200'
                   />
+                  {uploadProgress === 100 ? (
+                    <div className='flex gap-1 items-center justify-center text-sm text-zinc-700 text-center pt-2'>
+                      <Loader2 className='h-3 w-3 animate-spin' />
+                      Redirecting...
+                    </div>
+                  ) : null}
                 </div>
               ) : null}
+              <input
+                {...getInputProps}
+                type='file'
+                id='dropzone-file'
+                className='hidden'
+              />
             </label>
           </div>
         </div>
